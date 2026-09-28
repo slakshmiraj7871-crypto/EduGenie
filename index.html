@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EduGenie - AI-Powered Learning Assistant</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    
+    <!-- Top Header -->
+    <header class="navbar">
+      <div class="brand">
+        <div class="brand-logo">
+          <span class="sparkle-icon">✨</span>
+        </div>
+        <div class="brand-text">
+          <h1>EduGenie<span>.AI</span></h1>
+          <p class="tagline">Google Gemini Powered Learning Assistant</p>
+        </div>
+      </div>
+
+      <div class="header-badges">
+        <span class="badge badge-model">
+          <span class="status-dot"></span>
+          {{ model_name }}
+        </span>
+        {% if api_configured %}
+          <span class="badge badge-success" title="Gemini API is active">🟢 API Connected</span>
+        {% else %}
+          <span class="badge badge-warning" title="Set GEMINI_API_KEY in .env">⚠️ API Key Needed</span>
+        {% endif %}
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      
+      <!-- Welcome Hero Banner -->
+      <section class="hero-banner">
+        <h2>Supercharge Your Learning with Generative AI</h2>
+        <p>Ask questions, simplify tough concepts, generate interactive quizzes, summarize revision notes, and build step-by-step learning roadmaps.</p>
+      </section>
+
+      <!-- Interactive Workspace Card -->
+      <div class="workspace-card">
+        
+        <!-- Task Selection Control (Dropdown + Quick Tabs) -->
+        <div class="task-selector-wrapper">
+          <label for="taskSelect" class="control-label">
+            <span class="label-icon">🎯</span> Select Educational Task:
+          </label>
+          <div class="select-container">
+            <select id="taskSelect" class="task-dropdown">
+              <option value="explain" selected>💡 Concept Explanation (Simplified)</option>
+              <option value="qa">❓ Academic Q&A (Smart & Concise)</option>
+              <option value="quiz">📝 Generate Quiz (3 MCQs with Answers)</option>
+              <option value="summarize">📄 Passage Summarizer (Exam Revision)</option>
+              <option value="recommend">🗺️ Recommend Learning Path (Roadmap)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Quick Tabs for Instant 1-Click Mode Switching -->
+        <div class="tabs-nav" id="tabsNav">
+          <button type="button" class="tab-btn active" data-task="explain">💡 Explain Concept</button>
+          <button type="button" class="tab-btn" data-task="qa">❓ Academic Q&A</button>
+          <button type="button" class="tab-btn" data-task="quiz">📝 Generate Quiz</button>
+          <button type="button" class="tab-btn" data-task="summarize">📄 Summarizer</button>
+          <button type="button" class="tab-btn" data-task="recommend">🗺️ Learning Path</button>
+        </div>
+
+        <!-- Input Form -->
+        <form id="eduForm" class="edu-form">
+          <div class="input-header">
+            <label for="userInput" id="inputLabel" class="input-title">Concept to Explain:</label>
+            <span class="char-count" id="charCount">0 characters</span>
+          </div>
+
+          <div class="textarea-wrapper">
+            <textarea 
+              id="userInput" 
+              name="prompt" 
+              class="edu-textarea" 
+              rows="5" 
+              placeholder="e.g., The Pythagoras Theorem, Photosynthesis, Quantum Entanglement..."
+              required
+            ></textarea>
+          </div>
+
+          <!-- Quick Scenario Starters -->
+          <div class="scenario-starters">
+            <span class="starters-label">Try Example:</span>
+            <div class="starter-chips" id="starterChips">
+              <!-- Dynamically populated based on active task -->
+            </div>
+          </div>
+
+          <!-- Action Button Row -->
+          <div class="form-actions">
+            <div class="keyboard-hint">
+              <kbd>Ctrl</kbd> + <kbd>Enter</kbd> to submit
+            </div>
+            <div class="action-buttons">
+              <button type="button" id="clearBtn" class="btn btn-secondary">Clear</button>
+              <button type="submit" id="submitBtn" class="btn btn-primary">
+                <span class="btn-text">Generate with EduGenie</span>
+                <span class="btn-icon">⚡</span>
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <!-- Loading Indicator -->
+        <div id="loadingIndicator" class="loading-container hidden">
+          <div class="spinner-orbit">
+            <div class="spinner-ring"></div>
+            <div class="spinner-core">🪄</div>
+          </div>
+          <p id="loadingMessage" class="loading-text">EduGenie is thinking and crafting your answer...</p>
+        </div>
+
+        <!-- Result Box Container -->
+        <div id="resultContainer" class="result-container hidden">
+          <div class="result-header">
+            <div class="result-title-group">
+              <span class="result-badge" id="resultModuleBadge">Response</span>
+              <h3 id="resultTitle">Generated Result</h3>
+            </div>
+            <div class="result-actions">
+              <button type="button" id="copyBtn" class="btn btn-icon" title="Copy to clipboard">
+                📋 Copy
+              </button>
+            </div>
+          </div>
+
+          <!-- Text / Markdown Output Container -->
+          <div id="resultText" class="result-content markdown-body"></div>
+
+          <!-- Interactive Quiz Deck (Visible when quiz is generated) -->
+          <div id="quizDeck" class="quiz-deck hidden">
+            <div class="quiz-scoreboard">
+              <div class="score-display">
+                <span class="score-label">Interactive Quiz Progress:</span>
+                <span id="scoreText" class="score-value">0 / 3 Answered</span>
+              </div>
+              <div class="score-bar">
+                <div id="scoreProgress" class="score-progress-fill" style="width: 0%;"></div>
+              </div>
+            </div>
+            <div id="quizQuestionsContainer" class="quiz-questions"></div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- Feature Grid Showcase -->
+      <section class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">💡</div>
+          <h4>Simplified Explanations</h4>
+          <p>Powered by instruction-tuned AI to explain complex concepts in plain English with everyday analogies.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">❓</div>
+          <h4>Concise Academic Q&A</h4>
+          <p>Instant answers to homework questions, scientific inquiries, and historical facts.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📝</div>
+          <h4>Interactive MCQs</h4>
+          <p>3-question multiple choice quizzes with instant feedback, wrong-answer corrections, and rationales.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🗺️</div>
+          <h4>Personalized Roadmaps</h4>
+          <p>Curated beginner to advanced learning plans complete with milestones and top study resources.</p>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>EduGenie Learning Assistant &copy; 2025. Built with FastAPI, Google Gemini, and LaMini-Flan-T5.</p>
+      <div class="footer-links">
+        <a href="/docs" target="_blank">Swagger API Docs</a>
+        <span>&bull;</span>
+        <a href="/health" target="_blank">System Health</a>
+      </div>
+    </footer>
+
+  </div>
+
+  <script src="/static/script.js"></script>
+</body>
+</html>
